@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
-import { Brain, Network, Zap, Activity, Sparkles, Cpu } from "lucide-react"
+import { Brain, Network, Zap, Activity, Sparkles, Cpu, Shield } from "lucide-react"
 
 export function LoadingScreen() {
   const [progress, setProgress] = useState(0)
@@ -10,111 +10,125 @@ export function LoadingScreen() {
   const [currentStep, setCurrentStep] = useState(0)
 
   const loadingSteps = [
-    { text: "Initializing AI Orchestra...", icon: Brain, color: "from-blue-500 to-purple-500" },
-    { text: "Loading Neural Networks...", icon: Network, color: "from-purple-500 to-pink-500" },
-    { text: "Connecting Agent Nodes...", icon: Zap, color: "from-pink-500 to-orange-500" },
-    { text: "Optimizing Performance...", icon: Activity, color: "from-orange-500 to-yellow-500" },
-    { text: "Calibrating Systems...", icon: Cpu, color: "from-yellow-500 to-green-500" },
-    { text: "Ready to Orchestrate!", icon: Sparkles, color: "from-green-500 to-blue-500" },
+    { text: "Initializing AI Orchestra...", icon: Brain, duration: 2000 },
+    { text: "Loading Neural Networks...", icon: Network, duration: 2500 },
+    { text: "Connecting Agent Nodes...", icon: Zap, duration: 2000 },
+    { text: "Optimizing Performance...", icon: Activity, duration: 1800 },
+    { text: "Calibrating Security...", icon: Shield, duration: 1500 },
+    { text: "Finalizing Systems...", icon: Cpu, duration: 1200 },
+    { text: "Ready to Orchestrate!", icon: Sparkles, duration: 1000 },
   ]
 
   useEffect(() => {
+    const totalDuration = 0
+    const stepDurations = loadingSteps.map((step) => step.duration)
+    const totalTime = stepDurations.reduce((sum, duration) => sum + duration, 0)
+
     const interval = setInterval(() => {
       setProgress((prev) => {
-        const newProgress = Math.min(prev + Math.random() * 8 + 2, 100)
-        const stepIndex = Math.floor((newProgress / 100) * loadingSteps.length)
-        const safeStepIndex = Math.min(stepIndex, loadingSteps.length - 1)
+        const increment = (100 / totalTime) * 50 // Smooth increment
+        const newProgress = Math.min(prev + increment, 100)
 
-        if (safeStepIndex !== currentStep) {
-          setCurrentStep(safeStepIndex)
-          setLoadingText(loadingSteps[safeStepIndex].text)
+        // Calculate which step we should be on based on progress
+        let accumulatedTime = 0
+        let stepIndex = 0
+
+        for (let i = 0; i < stepDurations.length; i++) {
+          accumulatedTime += stepDurations[i]
+          if ((newProgress / 100) * totalTime <= accumulatedTime) {
+            stepIndex = i
+            break
+          }
+        }
+
+        if (stepIndex !== currentStep && stepIndex < loadingSteps.length) {
+          setCurrentStep(stepIndex)
+          setLoadingText(loadingSteps[stepIndex].text)
         }
 
         return newProgress
       })
-    }, 120)
+    }, 50)
 
     return () => clearInterval(interval)
-  }, [currentStep]) // Removed loadingSteps from the dependency array
+  }, [currentStep])
 
   const IconComponent = loadingSteps[currentStep]?.icon || Brain
-  const currentColor = loadingSteps[currentStep]?.color || "from-blue-500 to-purple-500"
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0, scale: 1.1, filter: "blur(20px)" }}
+      exit={{ opacity: 0, scale: 1.05, filter: "blur(10px)" }}
       transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center z-50 overflow-hidden"
+      className="fixed inset-0 bg-black flex items-center justify-center z-50 overflow-hidden"
     >
       {/* Animated background particles */}
       <div className="absolute inset-0">
-        {[...Array(50)].map((_, i) => (
+        {[...Array(30)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-1 h-1 bg-white/20 rounded-full"
+            className="absolute w-1 h-1 bg-orange-500/30 rounded-full"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
             }}
             animate={{
               y: [0, -100, 0],
-              opacity: [0, 1, 0],
-              scale: [0, 1, 0],
+              opacity: [0, 0.8, 0],
+              scale: [0, 1.5, 0],
             }}
             transition={{
-              duration: Math.random() * 3 + 2,
+              duration: Math.random() * 4 + 3,
               repeat: Number.POSITIVE_INFINITY,
-              delay: Math.random() * 2,
+              delay: Math.random() * 3,
+              ease: "easeInOut",
             }}
           />
         ))}
       </div>
 
-      <div className="text-center max-w-md mx-auto px-6 relative z-10">
+      <div className="text-center max-w-lg mx-auto px-8 relative z-10">
         {/* Enhanced Animated Logo */}
         <motion.div
-          className="relative w-32 h-32 mx-auto mb-8"
+          className="relative w-40 h-40 mx-auto mb-12"
           animate={{
             rotate: [0, 360],
           }}
           transition={{
-            rotate: { duration: 4, repeat: Number.POSITIVE_INFINITY, ease: "linear" },
+            rotate: { duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "linear" },
           }}
         >
           {/* Outer rotating rings */}
           {[...Array(3)].map((_, i) => (
             <motion.div
               key={i}
-              className={`absolute inset-${i * 2} border-2 border-gradient-to-r ${currentColor} rounded-full opacity-${
-                70 - i * 20
-              }`}
+              className={`absolute inset-${i * 3} border-2 rounded-full opacity-${60 - i * 15}`}
+              style={{
+                borderColor: `rgba(255, 102, 0, ${0.6 - i * 0.2})`,
+              }}
               animate={{ rotate: i % 2 === 0 ? 360 : -360 }}
               transition={{
-                duration: 3 + i,
+                duration: 6 + i * 2,
                 repeat: Number.POSITIVE_INFINITY,
                 ease: "linear",
-              }}
-              style={{
-                borderImage: `linear-gradient(45deg, rgba(255,255,255,0.${7 - i * 2}), rgba(255,255,255,0.${3 - i})) 1`,
               }}
             />
           ))}
 
           {/* Central icon container */}
           <motion.div
-            className={`absolute inset-6 bg-gradient-to-br ${currentColor} rounded-full flex items-center justify-center shadow-2xl`}
+            className="absolute inset-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center shadow-2xl"
             animate={{
               scale: [1, 1.1, 1],
               boxShadow: [
-                "0 0 20px rgba(255,255,255,0.3)",
-                "0 0 40px rgba(255,255,255,0.6)",
-                "0 0 20px rgba(255,255,255,0.3)",
+                "0 0 30px rgba(255, 102, 0, 0.4)",
+                "0 0 60px rgba(255, 102, 0, 0.8)",
+                "0 0 30px rgba(255, 102, 0, 0.4)",
               ],
             }}
             transition={{
-              duration: 2,
+              duration: 3,
               repeat: Number.POSITIVE_INFINITY,
               ease: "easeInOut",
             }}
@@ -124,9 +138,9 @@ export function LoadingScreen() {
               initial={{ scale: 0, rotate: -180, opacity: 0 }}
               animate={{ scale: 1, rotate: 0, opacity: 1 }}
               exit={{ scale: 0, rotate: 180, opacity: 0 }}
-              transition={{ duration: 0.6, ease: "backOut" }}
+              transition={{ duration: 0.8, ease: "backOut" }}
             >
-              <IconComponent size={40} className="text-white drop-shadow-lg" />
+              <IconComponent size={48} className="text-white drop-shadow-lg" />
             </motion.div>
           </motion.div>
 
@@ -134,20 +148,20 @@ export function LoadingScreen() {
           {[...Array(8)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-2 h-2 bg-white rounded-full"
+              className="absolute w-3 h-3 bg-orange-400 rounded-full"
               style={{
-                left: `${50 + 45 * Math.cos((i * Math.PI * 2) / 8)}%`,
-                top: `${50 + 45 * Math.sin((i * Math.PI * 2) / 8)}%`,
+                left: `${50 + 50 * Math.cos((i * Math.PI * 2) / 8)}%`,
+                top: `${50 + 50 * Math.sin((i * Math.PI * 2) / 8)}%`,
               }}
               animate={{
-                scale: [0.5, 1.2, 0.5],
+                scale: [0.5, 1.5, 0.5],
                 opacity: [0.3, 1, 0.3],
                 rotate: [0, 360],
               }}
               transition={{
-                duration: 2,
+                duration: 3,
                 repeat: Number.POSITIVE_INFINITY,
-                delay: i * 0.2,
+                delay: i * 0.3,
                 ease: "easeInOut",
               }}
             />
@@ -155,61 +169,68 @@ export function LoadingScreen() {
         </motion.div>
 
         {/* Enhanced Loading Text */}
-        <motion.div className="space-y-4 mb-8">
+        <motion.div className="space-y-6 mb-12">
           <motion.h2
             key={loadingText}
-            initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
+            initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="text-3xl font-bold text-white mb-2"
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="text-4xl font-bold text-white mb-4"
           >
             {loadingText}
           </motion.h2>
 
           <motion.p
-            className="text-white/70 text-lg"
+            className="text-white/70 text-xl"
             animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+            transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY }}
           >
             Preparing your AI orchestration experience
           </motion.p>
         </motion.div>
 
         {/* Enhanced Progress Bar */}
-        <div className="w-full h-4 bg-white/10 rounded-full overflow-hidden mb-6 backdrop-blur-sm border border-white/20">
+        <div className="w-full h-6 bg-white/10 rounded-full overflow-hidden mb-8 backdrop-blur-sm border border-white/20">
           <motion.div
-            className={`h-full bg-gradient-to-r ${currentColor} rounded-full relative`}
+            className="h-full bg-gradient-to-r from-orange-500 to-orange-600 rounded-full relative"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
           >
             {/* Enhanced shimmer effect */}
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent"
               animate={{ x: ["-100%", "200%"] }}
-              transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+              transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
             />
 
             {/* Glow effect */}
             <motion.div
-              className="absolute inset-0 bg-white/20 rounded-full blur-sm"
+              className="absolute inset-0 bg-white/30 rounded-full blur-sm"
               animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY }}
+              transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
             />
           </motion.div>
         </div>
 
         {/* Progress Details */}
         <motion.div
-          className="flex justify-between items-center text-sm text-white/60 mb-6"
+          className="flex justify-between items-center text-lg text-white/80 mb-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          <span>Initializing systems...</span>
+          <span>Loading systems...</span>
           <motion.span
-            className="font-mono font-semibold text-white"
-            animate={{ color: ["#ffffff", "#ff6b35", "#ffffff"] }}
+            className="font-mono font-bold text-white text-2xl"
+            animate={{
+              color: ["#ffffff", "#ff6600", "#ffffff"],
+              textShadow: [
+                "0 0 0px rgba(255, 102, 0, 0)",
+                "0 0 20px rgba(255, 102, 0, 0.8)",
+                "0 0 0px rgba(255, 102, 0, 0)",
+              ],
+            }}
             transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
           >
             {Math.round(progress)}%
@@ -217,19 +238,19 @@ export function LoadingScreen() {
         </motion.div>
 
         {/* Step indicators */}
-        <div className="flex justify-center space-x-3">
+        <div className="flex justify-center space-x-4">
           {loadingSteps.map((step, index) => (
             <motion.div
               key={index}
-              className={`w-3 h-3 rounded-full border-2 ${
-                index <= currentStep ? "bg-white border-white" : "bg-transparent border-white/30"
+              className={`w-4 h-4 rounded-full border-2 ${
+                index <= currentStep ? "bg-orange-500 border-orange-500" : "bg-transparent border-white/30"
               }`}
               animate={{
-                scale: index === currentStep ? [1, 1.4, 1] : 1,
-                borderColor: index === currentStep ? ["#ffffff", "#ff6b35", "#ffffff"] : undefined,
+                scale: index === currentStep ? [1, 1.5, 1] : 1,
+                borderColor: index === currentStep ? ["#ff6600", "#ffffff", "#ff6600"] : undefined,
               }}
               transition={{
-                duration: 0.6,
+                duration: 0.8,
                 repeat: index === currentStep ? Number.POSITIVE_INFINITY : 0,
               }}
             />

@@ -1,150 +1,98 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 interface FloatingWidgetProps {
   label: string
-  color: "green" | "orange" | "blue" | "purple" | "pink"
-  position: { top?: string; bottom?: string; left?: string; right?: string }
+  metric: string
+  color: "green" | "orange" | "blue" | "purple"
+  position: {
+    top?: string
+    bottom?: string
+    left?: string
+    right?: string
+  }
   delay?: number
-  metric?: string
 }
 
-const colorMap = {
-  green: {
-    bg: "from-green-500/20 to-emerald-500/20",
-    border: "border-green-500/30",
-    text: "text-green-600 dark:text-green-400",
-    glow: "shadow-green-500/20",
-  },
-  orange: {
-    bg: "from-orange-500/20 to-amber-500/20",
-    border: "border-orange-500/30",
-    text: "text-orange-600 dark:text-orange-400",
-    glow: "shadow-orange-500/20",
-  },
-  blue: {
-    bg: "from-blue-500/20 to-cyan-500/20",
-    border: "border-blue-500/30",
-    text: "text-blue-600 dark:text-blue-400",
-    glow: "shadow-blue-500/20",
-  },
-  purple: {
-    bg: "from-purple-500/20 to-violet-500/20",
-    border: "border-purple-500/30",
-    text: "text-purple-600 dark:text-purple-400",
-    glow: "shadow-purple-500/20",
-  },
-  pink: {
-    bg: "from-pink-500/20 to-rose-500/20",
-    border: "border-pink-500/30",
-    text: "text-pink-600 dark:text-pink-400",
-    glow: "shadow-pink-500/20",
-  },
-}
+export function FloatingWidget({ label, metric, color, position, delay = 0 }: FloatingWidgetProps) {
+  const [isVisible, setIsVisible] = useState(false)
 
-export function FloatingWidget({ label, color, position, delay = 0, metric }: FloatingWidgetProps) {
-  const [isHovered, setIsHovered] = useState(false)
-  const colors = colorMap[color]
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(true)
+    }, delay * 1000)
+
+    return () => clearTimeout(timer)
+  }, [delay])
+
+  const colorClasses = {
+    green: "from-green-500/20 to-green-600/20 border-green-500/30 text-green-400",
+    orange: "from-orange-500/20 to-orange-600/20 border-orange-500/30 text-orange-400",
+    blue: "from-blue-500/20 to-blue-600/20 border-blue-500/30 text-blue-400",
+    purple: "from-purple-500/20 to-purple-600/20 border-purple-500/30 text-purple-400",
+  }
+
+  const glowColors = {
+    green: "0 0 30px rgba(16, 185, 129, 0.3)",
+    orange: "0 0 30px rgba(255, 102, 0, 0.3)",
+    blue: "0 0 30px rgba(59, 130, 246, 0.3)",
+    purple: "0 0 30px rgba(147, 51, 234, 0.3)",
+  }
+
+  if (!isVisible) return null
 
   return (
     <motion.div
-      className="absolute z-20 hidden lg:block"
+      className={`fixed z-20 hidden lg:block`}
       style={position}
-      initial={{ opacity: 0, scale: 0, rotate: -180 }}
-      animate={{ opacity: 1, scale: 1, rotate: 0 }}
-      transition={{
-        duration: 0.8,
-        delay,
-        ease: [0.22, 1, 0.36, 1],
-        type: "spring",
-        stiffness: 100,
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      initial={{ opacity: 0, scale: 0.8, y: 20 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
     >
       <motion.div
         className={`
-          bg-gradient-to-br ${colors.bg} backdrop-blur-xl 
-          border ${colors.border} rounded-2xl px-6 py-4 
-          shadow-xl ${colors.glow} cursor-pointer
-          hover:shadow-2xl transition-all duration-300
+          bg-gradient-to-br ${colorClasses[color]} backdrop-blur-xl 
+          border rounded-2xl px-6 py-4 shadow-xl
         `}
-        whileHover={{
-          scale: 1.1,
-          y: -5,
-          rotateY: 10,
-        }}
         animate={{
           y: [0, -10, 0],
+          boxShadow: [glowColors[color], `${glowColors[color]}, ${glowColors[color]}`, glowColors[color]],
         }}
         transition={{
-          y: {
-            duration: 3,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "easeInOut",
-          },
-          hover: {
-            duration: 0.3,
-          },
+          y: { duration: 4, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" },
+          boxShadow: { duration: 3, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" },
         }}
+        whileHover={{ scale: 1.05, y: -5 }}
       >
-        <div className="flex items-center space-x-3">
+        <div className="text-center">
+          <div className="text-sm font-medium text-gray-300 mb-1">{label}</div>
           <motion.div
-            className={`w-3 h-3 rounded-full ${colors.text.replace("text-", "bg-")}`}
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.7, 1, 0.7],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Number.POSITIVE_INFINITY,
-            }}
-          />
-
-          <div>
-            <div className={`text-sm font-semibold ${colors.text}`}>{label}</div>
-            {metric && (
-              <motion.div
-                className={`text-xs ${colors.text} opacity-80`}
-                key={metric}
-                initial={{ scale: 1.1 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                {metric}
-              </motion.div>
-            )}
-          </div>
+            className={`text-2xl font-bold ${colorClasses[color].split(" ").pop()}`}
+            key={metric}
+            initial={{ scale: 1.2 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            {metric}
+          </motion.div>
         </div>
 
-        {/* Hover effect particles */}
-        {isHovered && (
-          <>
-            {[...Array(4)].map((_, i) => (
-              <motion.div
-                key={i}
-                className={`absolute w-1 h-1 rounded-full ${colors.text.replace("text-", "bg-")}`}
-                style={{
-                  left: `${25 + i * 15}%`,
-                  top: `${20 + Math.sin(i) * 30}%`,
-                }}
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{
-                  opacity: [0, 1, 0],
-                  scale: [0, 1, 0],
-                  y: [-10, -20],
-                }}
-                transition={{
-                  duration: 1.5,
-                  delay: i * 0.1,
-                  repeat: Number.POSITIVE_INFINITY,
-                }}
-              />
-            ))}
-          </>
-        )}
+        {/* Pulse indicator */}
+        <motion.div
+          className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${
+            color === "green"
+              ? "bg-green-500"
+              : color === "orange"
+                ? "bg-orange-500"
+                : color === "blue"
+                  ? "bg-blue-500"
+                  : "bg-purple-500"
+          }`}
+          animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
+          transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+        />
       </motion.div>
     </motion.div>
   )
