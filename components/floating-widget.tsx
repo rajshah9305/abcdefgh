@@ -1,10 +1,12 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { useState, useEffect } from "react"
 
 interface FloatingWidgetProps {
   label: string
-  color: "green" | "orange" | "blue" | "magenta"
+  metric: string
+  color: "green" | "orange" | "blue" | "purple"
   position: {
     top?: string
     bottom?: string
@@ -12,46 +14,97 @@ interface FloatingWidgetProps {
     right?: string
   }
   delay?: number
-  metric: string
 }
 
-export function FloatingWidget({ label, color, position, delay = 0, metric }: FloatingWidgetProps) {
+export function FloatingWidget({ label, metric, color, position, delay = 0 }: FloatingWidgetProps) {
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), delay * 1000)
+    return () => clearTimeout(timer)
+  }, [delay])
+
   const colorClasses = {
     green: "bg-green-500/20 border-green-500/30 text-green-600",
     orange: "bg-orange-500/20 border-orange-500/30 text-orange-600",
     blue: "bg-blue-500/20 border-blue-500/30 text-blue-600",
-    magenta: "bg-pink-500/20 border-pink-500/30 text-pink-600",
+    purple: "bg-purple-500/20 border-purple-500/30 text-purple-600",
   }
+
+  const glowColors = {
+    green: "shadow-green-500/20",
+    orange: "shadow-orange-500/20",
+    blue: "shadow-blue-500/20",
+    purple: "shadow-purple-500/20",
+  }
+
+  if (!isVisible) return null
 
   return (
     <motion.div
-      className={`absolute z-20 px-4 py-2 rounded-full backdrop-blur-xl border ${colorClasses[color]} shadow-lg`}
+      className="fixed z-20 hidden lg:block"
       style={position}
-      initial={{ opacity: 0, scale: 0.8, y: 20 }}
-      animate={{
-        opacity: 1,
-        scale: 1,
-        y: [0, -10, 0],
-      }}
+      initial={{ opacity: 0, scale: 0, rotate: -180 }}
+      animate={{ opacity: 1, scale: 1, rotate: 0 }}
       transition={{
-        opacity: { delay, duration: 0.5 },
-        scale: { delay, duration: 0.5 },
-        y: {
-          delay: delay + 0.5,
-          duration: 3,
+        duration: 1,
+        ease: [0.22, 1, 0.36, 1],
+        type: "spring",
+        stiffness: 100,
+      }}
+    >
+      <motion.div
+        className={`px-6 py-4 rounded-2xl backdrop-blur-xl border ${colorClasses[color]} ${glowColors[color]} shadow-xl`}
+        animate={{
+          y: [0, -10, 0],
+          rotate: [0, 2, -2, 0],
+        }}
+        transition={{
+          duration: 6,
           repeat: Number.POSITIVE_INFINITY,
           ease: "easeInOut",
-        },
-      }}
-      whileHover={{ scale: 1.1 }}
-    >
-      <div className="flex items-center space-x-2 text-sm font-medium">
-        <div
-          className={`w-2 h-2 rounded-full ${color === "green" ? "bg-green-500" : color === "orange" ? "bg-orange-500" : color === "blue" ? "bg-blue-500" : "bg-pink-500"} animate-pulse`}
+        }}
+        whileHover={{
+          scale: 1.1,
+          rotate: 0,
+          transition: { duration: 0.3 },
+        }}
+      >
+        <div className="text-center">
+          <div className="text-sm font-medium opacity-80 mb-1">{label}</div>
+          <motion.div
+            className="text-2xl font-bold font-mono"
+            key={metric}
+            animate={{
+              scale: [1, 1.1, 1],
+            }}
+            transition={{ duration: 0.3 }}
+          >
+            {metric}
+          </motion.div>
+        </div>
+
+        {/* Pulse indicator */}
+        <motion.div
+          className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${
+            color === "green"
+              ? "bg-green-500"
+              : color === "orange"
+                ? "bg-orange-500"
+                : color === "blue"
+                  ? "bg-blue-500"
+                  : "bg-purple-500"
+          }`}
+          animate={{
+            scale: [1, 1.5, 1],
+            opacity: [1, 0.5, 1],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Number.POSITIVE_INFINITY,
+          }}
         />
-        <span>{label}</span>
-        <span className="font-mono font-bold">{metric}</span>
-      </div>
+      </motion.div>
     </motion.div>
   )
 }

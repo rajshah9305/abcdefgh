@@ -8,9 +8,8 @@ import { ConfigurationPanel } from "@/components/configuration-panel"
 import { MissionControlDashboard } from "@/components/mission-control-dashboard"
 import { Navigation } from "@/components/navigation"
 import { AnalyticsProvider } from "@/components/analytics-provider"
-import { ErrorBoundary } from "@/components/error-boundary"
+import { ToastProvider } from "@/components/toast-provider"
 import { LoadingScreen } from "@/components/loading-screen"
-import { PerformanceMonitor } from "@/components/performance-monitor"
 
 export default function Home() {
   const [currentSection, setCurrentSection] = useState<"hero" | "frameworks" | "config" | "dashboard">("hero")
@@ -18,13 +17,15 @@ export default function Home() {
   const [isTransitioning, setIsTransitioning] = useState(false)
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoaded(true), 2500)
+    const timer = setTimeout(() => setIsLoaded(true), 4000) // 4 second minimum
     return () => clearTimeout(timer)
   }, [])
 
   const handleSectionChange = async (section: "hero" | "frameworks" | "config" | "dashboard") => {
+    if (section === currentSection) return
+
     setIsTransitioning(true)
-    await new Promise((resolve) => setTimeout(resolve, 300))
+    await new Promise((resolve) => setTimeout(resolve, 400))
     setCurrentSection(section)
     setIsTransitioning(false)
   }
@@ -32,7 +33,7 @@ export default function Home() {
   const sectionVariants = {
     hidden: {
       opacity: 0,
-      y: 50,
+      y: 60,
       scale: 0.95,
       filter: "blur(10px)",
     },
@@ -42,18 +43,18 @@ export default function Home() {
       scale: 1,
       filter: "blur(0px)",
       transition: {
-        duration: 0.8,
+        duration: 1,
         ease: [0.22, 1, 0.36, 1],
         staggerChildren: 0.1,
       },
     },
     exit: {
       opacity: 0,
-      y: -50,
+      y: -60,
       scale: 1.05,
       filter: "blur(10px)",
       transition: {
-        duration: 0.5,
+        duration: 0.6,
         ease: [0.22, 1, 0.36, 1],
       },
     },
@@ -64,9 +65,8 @@ export default function Home() {
   }
 
   return (
-    <ErrorBoundary>
+    <ToastProvider>
       <AnalyticsProvider>
-        <PerformanceMonitor />
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 text-black overflow-hidden relative">
           <Navigation
             currentSection={currentSection}
@@ -90,25 +90,34 @@ export default function Home() {
             </motion.div>
           </AnimatePresence>
 
-          {/* Transition overlay */}
+          {/* Enhanced transition overlay */}
           <AnimatePresence>
             {isTransitioning && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-white/50 backdrop-blur-sm z-40 flex items-center justify-center"
+                className="fixed inset-0 bg-white/60 backdrop-blur-md z-40 flex items-center justify-center"
               >
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-                  className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full"
-                />
+                <motion.div className="text-center">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                    className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"
+                  />
+                  <motion.p
+                    animate={{ opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
+                    className="text-gray-600 font-medium"
+                  >
+                    Transitioning...
+                  </motion.p>
+                </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </AnalyticsProvider>
-    </ErrorBoundary>
+    </ToastProvider>
   )
 }

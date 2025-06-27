@@ -1,22 +1,26 @@
 "use client"
 
-import { motion, useScroll, useTransform } from "framer-motion"
-import { Play, ArrowRight, Zap, TrendingUp, Activity, Network, Sparkles } from "lucide-react"
+import { motion, useScroll, useTransform, useInView } from "framer-motion"
+import { Play, ArrowRight, Zap, TrendingUp, Activity, Network, Sparkles, ChevronDown } from "lucide-react"
 import { EnhancedThreeBackground } from "./enhanced-three-background"
 import { EnhancedMetricsCard } from "./enhanced-metrics-card"
 import { FloatingWidget } from "./floating-widget"
 import { useAnalytics } from "./analytics-provider"
-import { useState, useEffect } from "react"
+import { useToast } from "./toast-provider"
+import { useState, useEffect, useRef } from "react"
 
 interface HeroSectionProps {
   onNext: () => void
 }
 
 export function HeroSection({ onNext }: HeroSectionProps) {
-  const { trackEvent } = useAnalytics()
+  const { trackEvent, trackFeatureUsage } = useAnalytics()
+  const { showToast } = useToast()
   const { scrollY } = useScroll()
   const y = useTransform(scrollY, [0, 300], [0, -50])
   const opacity = useTransform(scrollY, [0, 300], [1, 0.8])
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: "-100px" })
 
   const [realTimeMetrics, setRealTimeMetrics] = useState({
     activeAgents: 247,
@@ -25,6 +29,7 @@ export function HeroSection({ onNext }: HeroSectionProps) {
     cpuUsage: 67,
     memoryUsage: 84,
     networkLatency: 12,
+    throughput: 15420,
   })
 
   useEffect(() => {
@@ -36,15 +41,24 @@ export function HeroSection({ onNext }: HeroSectionProps) {
         cpuUsage: Math.max(30, Math.min(90, prev.cpuUsage + (Math.random() - 0.5) * 10)),
         memoryUsage: Math.max(40, Math.min(95, prev.memoryUsage + (Math.random() - 0.5) * 8)),
         networkLatency: Math.max(5, Math.min(50, prev.networkLatency + (Math.random() - 0.5) * 5)),
+        throughput: prev.throughput + Math.floor(Math.random() * 20),
       }))
-    }, 3000)
+    }, 4000)
 
     return () => clearInterval(interval)
   }, [])
 
   const handleCTAClick = (action: string) => {
     trackEvent("hero_cta_click", { action, timestamp: Date.now() })
+    trackFeatureUsage(`cta_${action}`)
+    showToast("Welcome to AI Orchestra! 🎼", "success")
     onNext()
+  }
+
+  const handleDemoClick = () => {
+    trackEvent("demo_click", { timestamp: Date.now() })
+    trackFeatureUsage("demo_request")
+    showToast("Demo launching soon! 🚀", "info")
   }
 
   const containerVariants = {
@@ -52,31 +66,32 @@ export function HeroSection({ onNext }: HeroSectionProps) {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.15,
+        staggerChildren: 0.2,
         delayChildren: 0.3,
       },
     },
   }
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 40, scale: 0.95 },
+    hidden: { opacity: 0, y: 60, scale: 0.95 },
     visible: {
       opacity: 1,
       y: 0,
       scale: 1,
       transition: {
-        duration: 1,
+        duration: 1.2,
         ease: [0.22, 1, 0.36, 1],
         type: "spring",
-        stiffness: 100,
+        stiffness: 80,
       },
     },
   }
 
   return (
     <motion.div
+      ref={ref}
       style={{ y, opacity }}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
     >
       <EnhancedThreeBackground />
 
@@ -92,45 +107,61 @@ export function HeroSection({ onNext }: HeroSectionProps) {
         label="Success Rate"
         color="orange"
         position={{ top: "25%", right: "12%" }}
-        delay={1.2}
+        delay={1.4}
         metric={`${realTimeMetrics.successRate.toFixed(1)}%`}
       />
       <FloatingWidget
-        label="Latency"
+        label="Throughput"
         color="blue"
-        position={{ bottom: "20%", left: "6%" }}
-        delay={1.4}
+        position={{ bottom: "25%", left: "6%" }}
+        delay={1.8}
+        metric={`${realTimeMetrics.throughput.toLocaleString()}/h`}
+      />
+      <FloatingWidget
+        label="Latency"
+        color="purple"
+        position={{ bottom: "15%", right: "8%" }}
+        delay={2.2}
         metric={`${realTimeMetrics.networkLatency}ms`}
       />
 
       <motion.div
         variants={containerVariants}
         initial="hidden"
-        animate="visible"
+        animate={isInView ? "visible" : "hidden"}
         className="relative z-10 max-w-7xl mx-auto px-6 text-center"
       >
         {/* Enhanced Hero Text */}
-        <motion.div variants={itemVariants} className="mb-12">
+        <motion.div variants={itemVariants} className="mb-16">
           <motion.div
-            className="inline-flex items-center space-x-2 bg-gradient-to-r from-orange-100 to-orange-50 border border-orange-200 rounded-full px-6 py-3 mb-8 shadow-sm"
-            whileHover={{ scale: 1.05, boxShadow: "0 10px 25px rgba(255, 108, 0, 0.15)" }}
-            transition={{ duration: 0.2 }}
+            className="inline-flex items-center space-x-4 bg-gradient-to-r from-orange-100/80 to-orange-50/80 backdrop-blur-xl border border-orange-200/50 rounded-full px-8 py-4 mb-12 shadow-lg"
+            whileHover={{
+              scale: 1.05,
+              boxShadow: "0 25px 50px rgba(255, 102, 0, 0.2)",
+              y: -5,
+            }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
           >
-            <Sparkles size={20} className="text-orange-500" />
-            <span className="text-orange-600 font-medium">Next-Generation AI Orchestration</span>
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 4, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+            >
+              <Sparkles size={28} className="text-orange-500" />
+            </motion.div>
+            <span className="text-orange-600 font-semibold text-xl">Next-Generation AI Orchestration</span>
           </motion.div>
 
-          <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold mb-8 leading-tight">
+          <motion.h1 className="text-7xl md:text-8xl lg:text-9xl font-bold mb-12 leading-tight" variants={itemVariants}>
             <motion.span
               className="text-orange-500"
               animate={{
                 textShadow: [
-                  "0 0 20px rgba(255, 108, 0, 0.3)",
-                  "0 0 40px rgba(255, 108, 0, 0.5)",
-                  "0 0 20px rgba(255, 108, 0, 0.3)",
+                  "0 0 30px rgba(255, 102, 0, 0.4)",
+                  "0 0 60px rgba(255, 102, 0, 0.8)",
+                  "0 0 30px rgba(255, 102, 0, 0.4)",
                 ],
               }}
-              transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY }}
+              transition={{ duration: 4, repeat: Number.POSITIVE_INFINITY }}
             >
               AI Agent
             </motion.span>
@@ -139,15 +170,15 @@ export function HeroSection({ onNext }: HeroSectionProps) {
               className="text-transparent bg-clip-text bg-gradient-to-r from-gray-800 via-gray-900 to-black"
               initial={{ backgroundPosition: "0% 50%" }}
               animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-              transition={{ duration: 5, repeat: Number.POSITIVE_INFINITY }}
+              transition={{ duration: 6, repeat: Number.POSITIVE_INFINITY }}
               style={{ backgroundSize: "200% 200%" }}
             >
               Orchestration
             </motion.span>
-          </h1>
+          </motion.h1>
 
           <motion.p
-            className="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed"
+            className="text-2xl md:text-3xl text-gray-600 max-w-5xl mx-auto leading-relaxed"
             variants={itemVariants}
           >
             Revolutionary AI orchestration platform featuring autonomous agent coordination, real-time neural network
@@ -156,48 +187,54 @@ export function HeroSection({ onNext }: HeroSectionProps) {
         </motion.div>
 
         {/* Enhanced CTAs */}
-        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
+        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-8 justify-center mb-20">
           <motion.button
             onClick={() => handleCTAClick("start_building")}
-            className="group relative px-10 py-5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl font-bold text-xl overflow-hidden shadow-lg"
+            className="group relative px-16 py-8 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl font-bold text-2xl overflow-hidden shadow-2xl"
             whileHover={{
               scale: 1.05,
-              boxShadow: "0 20px 40px rgba(255, 108, 0, 0.3)",
+              boxShadow: "0 30px 60px rgba(255, 102, 0, 0.5)",
+              y: -8,
             }}
             whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            aria-label="Start orchestrating AI agents"
           >
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-orange-400 to-orange-500"
               initial={{ x: "-100%" }}
               whileHover={{ x: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.5 }}
             />
-            <span className="relative z-10 flex items-center justify-center space-x-3">
-              <Activity size={24} />
+            <span className="relative z-10 flex items-center justify-center space-x-4">
+              <Activity size={32} />
               <span>Start Orchestrating</span>
-              <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />
+              <ArrowRight size={32} className="group-hover:translate-x-2 transition-transform duration-500" />
             </span>
           </motion.button>
 
           <motion.button
-            onClick={() => handleCTAClick("view_demo")}
-            className="group px-10 py-5 border-2 border-orange-500 text-orange-500 rounded-2xl font-bold text-xl hover:bg-orange-50 transition-all backdrop-blur-xl shadow-lg"
+            onClick={handleDemoClick}
+            className="group px-16 py-8 border-2 border-orange-500 text-orange-500 rounded-2xl font-bold text-2xl hover:bg-orange-50 transition-all backdrop-blur-xl shadow-2xl"
             whileHover={{
               scale: 1.05,
-              borderColor: "#FF8A00",
-              backgroundColor: "rgba(255, 108, 0, 0.05)",
+              borderColor: "#FF8800",
+              backgroundColor: "rgba(255, 102, 0, 0.05)",
+              y: -8,
             }}
             whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            aria-label="Experience demo of the platform"
           >
-            <span className="flex items-center justify-center space-x-3">
-              <Play size={24} />
+            <span className="flex items-center justify-center space-x-4">
+              <Play size={32} />
               <span>Experience Demo</span>
             </span>
           </motion.button>
         </motion.div>
 
         {/* Enhanced Metrics Grid */}
-        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-7xl mx-auto mb-20">
           <EnhancedMetricsCard
             icon={Network}
             title="Active Agents"
@@ -228,19 +265,40 @@ export function HeroSection({ onNext }: HeroSectionProps) {
         </motion.div>
 
         {/* Performance Indicators */}
-        <motion.div variants={itemVariants} className="mt-16 flex justify-center space-x-8 text-sm text-gray-500">
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+        <motion.div variants={itemVariants} className="flex flex-wrap justify-center gap-8 text-lg text-gray-500 mb-16">
+          <motion.div
+            className="flex items-center space-x-3 bg-white/60 backdrop-blur-sm px-6 py-3 rounded-full border border-gray-200/50"
+            whileHover={{ scale: 1.05, y: -3 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
             <span>CPU: {realTimeMetrics.cpuUsage}%</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+          </motion.div>
+          <motion.div
+            className="flex items-center space-x-3 bg-white/60 backdrop-blur-sm px-6 py-3 rounded-full border border-gray-200/50"
+            whileHover={{ scale: 1.05, y: -3 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
             <span>Memory: {realTimeMetrics.memoryUsage}%</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+          </motion.div>
+          <motion.div
+            className="flex items-center space-x-3 bg-white/60 backdrop-blur-sm px-6 py-3 rounded-full border border-gray-200/50"
+            whileHover={{ scale: 1.05, y: -3 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse" />
             <span>Latency: {realTimeMetrics.networkLatency}ms</span>
-          </div>
+          </motion.div>
+        </motion.div>
+
+        {/* Scroll indicator */}
+        <motion.div
+          className="absolute bottom-12 left-1/2 transform -translate-x-1/2"
+          animate={{ y: [0, 15, 0] }}
+          transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY }}
+        >
+          <ChevronDown size={40} className="text-gray-400" />
         </motion.div>
       </motion.div>
     </motion.div>
