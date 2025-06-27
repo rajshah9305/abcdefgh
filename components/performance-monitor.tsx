@@ -1,49 +1,69 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { useAnalytics } from "./analytics-provider"
 
 export function PerformanceMonitor() {
   const { trackPerformance } = useAnalytics()
+  const metricsRef = useRef({
+    startTime: Date.now(),
+    lastFrameTime: Date.now(),
+    frameCount: 0,
+  })
 
   useEffect(() => {
-    // Monitor Core Web Vitals
-    const observer = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) {
-        if (entry.entryType === "navigation") {
-          const navEntry = entry as PerformanceNavigationTiming
-          trackPerformance("loadTime", navEntry.loadEventEnd - navEntry.loadEventStart)
-        }
-
-        if (entry.entryType === "paint") {
-          trackPerformance("renderTime", entry.startTime)
-        }
-      }
-    })
-
-    observer.observe({ entryTypes: ["navigation", "paint"] })
-
-    // Monitor frame rate
-    let frameCount = 0
-    let lastTime = performance.now()
+    let animationFrameId: number
+    let performanceInterval: NodeJS.Timeout
 
     const measureFPS = () => {
-      frameCount++
-      const currentTime = performance.now()
+      const now = Date.now()
+      const delta = now - metricsRef.current.lastFrameTime
+      metricsRef.current.lastFrameTime = now
+      metricsRef.current.frameCount++
 
-      if (currentTime - lastTime >= 1000) {
-        trackPerformance("fps", frameCount)
-        frameCount = 0
-        lastTime = currentTime
+      if (delta > 0) {
+        const fps = 1000 / delta
+        if (metricsRef.current.frameCount % 60 === 0) {
+          trackPerformance("fps", Math.round(fps))
+        }
       }
 
-      requestAnimationFrame(measureFPS)
+      animationFrameId = requestAnimationFrame(measureFPS)
     }
 
-    measureFPS()
+    const measurePerformance = () => {
+      if (typeof window !== "undefined" && "performance" in window) {
+        const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming
+        if (navigation) {
+          trackPerformance("page_load_time", navigation.loadEventEnd - navigation.fetchStart)
+          trackPerformance("dom_content_loaded", navigation.domContentLoadedEventEnd - navigation.fetchStart)
+        }
+
+        // Memory usage (if available)
+        if ("memory" in performance) {
+          const memory = (performance as any).memory
+          trackPerformance("memory_used", memory.usedJSHeapSize)
+          trackPerformance("memory_total", memory.totalJSHeapSize)
+        }
+      }
+    }
+
+    // Start FPS monitoring
+    animationFrameId = requestAnimationFrame(measureFPS)
+
+    // Measure performance metrics periodically
+    performanceInterval = setInterval(measurePerformance, 10000) // Every 10 seconds
+
+    // Initial performance measurement
+    setTimeout(measurePerformance, 1000)
 
     return () => {
-      observer.disconnect()
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+      }
+      if (performanceInterval) {
+        clearInterval(performanceInterval)
+      }
     }
   }, [trackPerformance])
 

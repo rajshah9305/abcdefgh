@@ -1,214 +1,272 @@
 "use client"
 
-import { useState } from "react"
 import { motion } from "framer-motion"
-import { ArrowRight, Code, Eye, Shield, Zap } from "lucide-react"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
+import { ArrowRight, Settings, Sliders, Zap, Shield, Cpu, Database } from "lucide-react"
+import { useState } from "react"
+import { useToast } from "./toast-provider"
 
 interface ConfigurationPanelProps {
   onNext: () => void
 }
 
 export function ConfigurationPanel({ onNext }: ConfigurationPanelProps) {
+  const { showToast } = useToast()
   const [config, setConfig] = useState({
-    temperature: [0.7],
-    maxTokens: [2048],
-    enableMemory: true,
-    enableTools: true,
-    systemPrompt: "You are a helpful AI assistant specialized in task orchestration and automation.",
-    apiKey: "",
+    maxAgents: 50,
+    memoryLimit: 8,
+    cpuCores: 4,
+    autoScaling: true,
+    loadBalancing: true,
+    monitoring: true,
+    securityLevel: "high",
+    deploymentMode: "cloud",
   })
 
+  const handleConfigChange = (key: string, value: any) => {
+    setConfig((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const handleDeploy = () => {
+    showToast("Configuration saved! Deploying agents... 🚀", "success")
+    setTimeout(() => {
+      onNext()
+    }, 1000)
+  }
+
   return (
-    <div className="min-h-screen pt-24 pb-12 px-6">
-      <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-16"
-        >
-          <h2 className="text-5xl md:text-6xl font-bold mb-6">
-            <span className="text-orange-500">Configure</span> Your Agent
+    <div className="min-h-screen pt-24 px-6">
+      <div className="max-w-6xl mx-auto">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-16">
+          <h2 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+            <span className="text-orange-500">Configure</span> Your Orchestra
           </h2>
-          <p className="text-xl text-white/70 max-w-3xl mx-auto">
-            Fine-tune your AI agent's behavior, capabilities, and security settings for optimal performance in your
-            orchestration environment.
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+            Fine-tune your AI agent orchestration settings for optimal performance and scalability.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Configuration Panel */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          {/* Performance Settings */}
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
+            initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="space-y-8"
+            className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border border-gray-200 dark:border-gray-700"
           >
-            {/* Model Parameters */}
-            <div className="bg-gradient-to-br from-gray-900/90 to-black/90 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="p-3 bg-gradient-to-br from-orange-500/20 to-pink-500/20 rounded-xl">
-                  <Zap size={24} className="text-orange-500" />
-                </div>
-                <h3 className="text-2xl font-bold">Model Parameters</h3>
+            <div className="flex items-center space-x-3 mb-8">
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl">
+                <Cpu size={24} className="text-white" />
               </div>
-
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-white/70 mb-3">
-                    Temperature: {config.temperature[0]}
-                  </label>
-                  <Slider
-                    value={config.temperature}
-                    onValueChange={(value) => setConfig((prev) => ({ ...prev, temperature: value }))}
-                    max={2}
-                    min={0}
-                    step={0.1}
-                    className="w-full"
-                  />
-                  <p className="text-xs text-white/50 mt-2">Controls randomness in responses</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-white/70 mb-3">
-                    Max Tokens: {config.maxTokens[0]}
-                  </label>
-                  <Slider
-                    value={config.maxTokens}
-                    onValueChange={(value) => setConfig((prev) => ({ ...prev, maxTokens: value }))}
-                    max={4096}
-                    min={256}
-                    step={256}
-                    className="w-full"
-                  />
-                  <p className="text-xs text-white/50 mt-2">Maximum response length</p>
-                </div>
-              </div>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Performance</h3>
             </div>
 
-            {/* Capabilities */}
-            <div className="bg-gradient-to-br from-gray-900/90 to-black/90 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="p-3 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl">
-                  <Code size={24} className="text-pink-500" />
-                </div>
-                <h3 className="text-2xl font-bold">Capabilities</h3>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Memory Management</p>
-                    <p className="text-sm text-white/60">Enable persistent memory across sessions</p>
-                  </div>
-                  <Switch
-                    checked={config.enableMemory}
-                    onCheckedChange={(checked) => setConfig((prev) => ({ ...prev, enableMemory: checked }))}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Tool Integration</p>
-                    <p className="text-sm text-white/60">Allow agent to use external tools</p>
-                  </div>
-                  <Switch
-                    checked={config.enableTools}
-                    onCheckedChange={(checked) => setConfig((prev) => ({ ...prev, enableTools: checked }))}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Security */}
-            <div className="bg-gradient-to-br from-gray-900/90 to-black/90 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="p-3 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-xl">
-                  <Shield size={24} className="text-green-500" />
-                </div>
-                <h3 className="text-2xl font-bold">Security</h3>
-              </div>
-
+            <div className="space-y-8">
+              {/* Max Agents */}
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-3">API Key</label>
-                <Input
-                  type="password"
-                  placeholder="Enter your API key"
-                  value={config.apiKey}
-                  onChange={(e) => setConfig((prev) => ({ ...prev, apiKey: e.target.value }))}
-                  className="bg-black/50 border-white/20 focus:border-orange-500"
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Maximum Agents: {config.maxAgents}
+                </label>
+                <input
+                  type="range"
+                  min="10"
+                  max="100"
+                  value={config.maxAgents}
+                  onChange={(e) => handleConfigChange("maxAgents", Number.parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
                 />
-                <p className="text-xs text-white/50 mt-2">Your API key is encrypted and stored securely</p>
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <span>10</span>
+                  <span>100</span>
+                </div>
+              </div>
+
+              {/* Memory Limit */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Memory Limit: {config.memoryLimit}GB
+                </label>
+                <input
+                  type="range"
+                  min="2"
+                  max="32"
+                  value={config.memoryLimit}
+                  onChange={(e) => handleConfigChange("memoryLimit", Number.parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                />
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <span>2GB</span>
+                  <span>32GB</span>
+                </div>
+              </div>
+
+              {/* CPU Cores */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  CPU Cores: {config.cpuCores}
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="16"
+                  value={config.cpuCores}
+                  onChange={(e) => handleConfigChange("cpuCores", Number.parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                />
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <span>1</span>
+                  <span>16</span>
+                </div>
               </div>
             </div>
           </motion.div>
 
-          {/* Live Preview */}
+          {/* Feature Settings */}
           <motion.div
-            initial={{ opacity: 0, x: 50 }}
+            initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="space-y-8"
+            className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border border-gray-200 dark:border-gray-700"
           >
-            {/* System Prompt */}
-            <div className="bg-gradient-to-br from-gray-900/90 to-black/90 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="p-3 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-xl">
-                  <Eye size={24} className="text-blue-500" />
-                </div>
-                <h3 className="text-2xl font-bold">System Prompt</h3>
+            <div className="flex items-center space-x-3 mb-8">
+              <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
+                <Settings size={24} className="text-white" />
               </div>
-
-              <Textarea
-                placeholder="Define your agent's personality and capabilities..."
-                value={config.systemPrompt}
-                onChange={(e) => setConfig((prev) => ({ ...prev, systemPrompt: e.target.value }))}
-                className="min-h-[200px] bg-black/50 border-white/20 focus:border-orange-500 resize-none"
-              />
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Features</h3>
             </div>
 
-            {/* Live Preview */}
-            <div className="bg-gradient-to-br from-gray-900/90 to-black/90 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
-              <h3 className="text-2xl font-bold mb-6">Configuration Preview</h3>
+            <div className="space-y-6">
+              {/* Toggle Switches */}
+              {[
+                { key: "autoScaling", label: "Auto Scaling", icon: Zap },
+                { key: "loadBalancing", label: "Load Balancing", icon: Database },
+                { key: "monitoring", label: "Real-time Monitoring", icon: Sliders },
+              ].map((feature) => {
+                const Icon = feature.icon
+                return (
+                  <div key={feature.key} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Icon size={20} className="text-gray-600 dark:text-gray-400" />
+                      <span className="text-gray-900 dark:text-white font-medium">{feature.label}</span>
+                    </div>
+                    <motion.button
+                      onClick={() => handleConfigChange(feature.key, !config[feature.key as keyof typeof config])}
+                      className={`
+                        relative w-12 h-6 rounded-full transition-colors duration-300
+                        ${config[feature.key as keyof typeof config] ? "bg-orange-500" : "bg-gray-300 dark:bg-gray-600"}
+                      `}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <motion.div
+                        className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-md"
+                        animate={{
+                          x: config[feature.key as keyof typeof config] ? 24 : 4,
+                        }}
+                        transition={{ duration: 0.2 }}
+                      />
+                    </motion.button>
+                  </div>
+                )
+              })}
 
-              <div className="bg-black/50 rounded-xl p-6 font-mono text-sm">
-                <div className="text-green-400 mb-2">// Agent Configuration</div>
-                <div className="text-white/80">
-                  <div>
-                    temperature: <span className="text-orange-500">{config.temperature[0]}</span>
-                  </div>
-                  <div>
-                    maxTokens: <span className="text-orange-500">{config.maxTokens[0]}</span>
-                  </div>
-                  <div>
-                    memory: <span className="text-orange-500">{config.enableMemory.toString()}</span>
-                  </div>
-                  <div>
-                    tools: <span className="text-orange-500">{config.enableTools.toString()}</span>
-                  </div>
-                  <div>
-                    apiKey: <span className="text-orange-500">{"*".repeat(config.apiKey.length)}</span>
-                  </div>
+              {/* Security Level */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Security Level</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {["low", "medium", "high"].map((level) => (
+                    <motion.button
+                      key={level}
+                      onClick={() => handleConfigChange("securityLevel", level)}
+                      className={`
+                        px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                        ${
+                          config.securityLevel === level
+                            ? "bg-orange-500 text-white"
+                            : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                        }
+                      `}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {level.charAt(0).toUpperCase() + level.slice(1)}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Deployment Mode */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Deployment Mode</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {["cloud", "on-premise"].map((mode) => (
+                    <motion.button
+                      key={mode}
+                      onClick={() => handleConfigChange("deploymentMode", mode)}
+                      className={`
+                        px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                        ${
+                          config.deploymentMode === mode
+                            ? "bg-orange-500 text-white"
+                            : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                        }
+                      `}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {mode === "on-premise" ? "On-Premise" : "Cloud"}
+                    </motion.button>
+                  ))}
                 </div>
               </div>
             </div>
-
-            {/* Deploy Button */}
-            <motion.button
-              onClick={onNext}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-white font-semibold py-4 rounded-xl transition-all duration-300 flex items-center justify-center space-x-2 group text-lg"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <span>Deploy Agent</span>
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-            </motion.button>
           </motion.div>
         </div>
+
+        {/* Configuration Summary */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-3xl p-8 mb-8 border border-orange-200 dark:border-orange-700"
+        >
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Configuration Summary</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <span className="text-gray-600 dark:text-gray-400">Max Agents:</span>
+              <span className="ml-2 font-semibold text-orange-600 dark:text-orange-400">{config.maxAgents}</span>
+            </div>
+            <div>
+              <span className="text-gray-600 dark:text-gray-400">Memory:</span>
+              <span className="ml-2 font-semibold text-orange-600 dark:text-orange-400">{config.memoryLimit}GB</span>
+            </div>
+            <div>
+              <span className="text-gray-600 dark:text-gray-400">CPU Cores:</span>
+              <span className="ml-2 font-semibold text-orange-600 dark:text-orange-400">{config.cpuCores}</span>
+            </div>
+            <div>
+              <span className="text-gray-600 dark:text-gray-400">Security:</span>
+              <span className="ml-2 font-semibold text-orange-600 dark:text-orange-400">{config.securityLevel}</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Deploy Button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="text-center"
+        >
+          <motion.button
+            onClick={handleDeploy}
+            className="group px-12 py-6 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl font-bold text-xl shadow-xl hover:shadow-2xl transition-all duration-300"
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <span className="flex items-center space-x-3">
+              <Shield size={24} />
+              <span>Deploy Orchestra</span>
+              <ArrowRight size={24} className="group-hover:translate-x-1 transition-transform" />
+            </span>
+          </motion.button>
+        </motion.div>
       </div>
     </div>
   )

@@ -1,14 +1,80 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion } from "framer-motion"
+
+interface NetworkNode {
+  id: string
+  x: number
+  y: number
+  type: "orchestrator" | "worker" | "data"
+  status: "active" | "idle" | "processing"
+  connections: string[]
+  load: number
+}
 
 export function AgentNetworkVisualization() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const animationRef = useRef<number>()
+  const [nodes, setNodes] = useState<NetworkNode[]>([])
+  const [selectedNode, setSelectedNode] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Initialize network nodes
+    const initialNodes: NetworkNode[] = [
+      {
+        id: "orchestrator",
+        x: 400,
+        y: 200,
+        type: "orchestrator",
+        status: "active",
+        connections: ["worker-1", "worker-2", "worker-3", "data-1"],
+        load: 75,
+      },
+      {
+        id: "worker-1",
+        x: 200,
+        y: 100,
+        type: "worker",
+        status: "processing",
+        connections: ["orchestrator", "worker-2"],
+        load: 89,
+      },
+      {
+        id: "worker-2",
+        x: 600,
+        y: 100,
+        type: "worker",
+        status: "active",
+        connections: ["orchestrator", "worker-1", "worker-3"],
+        load: 45,
+      },
+      {
+        id: "worker-3",
+        x: 600,
+        y: 300,
+        type: "worker",
+        status: "idle",
+        connections: ["orchestrator", "worker-2"],
+        load: 12,
+      },
+      {
+        id: "data-1",
+        x: 200,
+        y: 300,
+        type: "data",
+        status: "active",
+        connections: ["orchestrator"],
+        load: 34,
+      },
+    ]
+
+    setNodes(initialNodes)
+  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas || nodes.length === 0) return
 
     const ctx = canvas.getContext("2d")
     if (!ctx) return
@@ -21,161 +87,236 @@ export function AgentNetworkVisualization() {
     resizeCanvas()
     window.addEventListener("resize", resizeCanvas)
 
-    // Agent nodes
-    const agents = [
-      { id: "central", x: canvas.width / 2, y: canvas.height / 2, size: 20, type: "orchestrator", connections: [] },
-      {
-        id: "alpha",
-        x: canvas.width * 0.2,
-        y: canvas.height * 0.3,
-        size: 15,
-        type: "worker",
-        connections: ["central"],
-      },
-      { id: "beta", x: canvas.width * 0.8, y: canvas.height * 0.3, size: 15, type: "worker", connections: ["central"] },
-      {
-        id: "gamma",
-        x: canvas.width * 0.2,
-        y: canvas.height * 0.7,
-        size: 15,
-        type: "worker",
-        connections: ["central", "alpha"],
-      },
-      {
-        id: "delta",
-        x: canvas.width * 0.8,
-        y: canvas.height * 0.7,
-        size: 15,
-        type: "worker",
-        connections: ["central", "beta"],
-      },
-      {
-        id: "epsilon",
-        x: canvas.width * 0.5,
-        y: canvas.height * 0.15,
-        size: 12,
-        type: "monitor",
-        connections: ["central"],
-      },
-      {
-        id: "zeta",
-        x: canvas.width * 0.5,
-        y: canvas.height * 0.85,
-        size: 12,
-        type: "monitor",
-        connections: ["central"],
-      },
-    ]
-
-    let animationFrame = 0
+    let time = 0
 
     const animate = () => {
-      ctx.fillStyle = "rgba(0, 0, 0, 0.1)"
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      time += 0.016
 
-      animationFrame += 0.02
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       // Draw connections
-      agents.forEach((agent) => {
-        agent.connections.forEach((connectionId) => {
-          const target = agents.find((a) => a.id === connectionId)
-          if (target) {
-            const pulse = Math.sin(animationFrame * 2 + agent.id.length) * 0.5 + 0.5
-            ctx.strokeStyle = `rgba(255, 108, 0, ${0.3 + pulse * 0.4})`
-            ctx.lineWidth = 2
-            ctx.beginPath()
-            ctx.moveTo(agent.x, agent.y)
-            ctx.lineTo(target.x, target.y)
-            ctx.stroke()
+      nodes.forEach((node) => {
+        node.connections.forEach((connectionId) => {
+          const targetNode = nodes.find((n) => n.id === connectionId)
+          if (!targetNode) return
 
-            // Data flow particles
-            const progress = (animationFrame * 0.5 + agent.id.length) % 1
-            const particleX = agent.x + (target.x - agent.x) * progress
-            const particleY = agent.y + (target.y - agent.y) * progress
+          // Data flow animation
+          const flowProgress = (time * 0.5 + node.id.length) % 1
+          const flowX = node.x + (targetNode.x - node.x) * flowProgress
+          const flowY = node.y + (targetNode.y - node.y) * flowProgress
 
-            ctx.fillStyle = `rgba(255, 0, 255, ${1 - progress})`
+          // Connection line
+          const gradient = ctx.createLinearGradient(node.x, node.y, targetNode.x, targetNode.y)
+          gradient.addColorStop(0, "rgba(255, 108, 0, 0.6)")
+          gradient.addColorStop(0.5, "rgba(255, 108, 0, 0.3)")
+          gradient.addColorStop(1, "rgba(255, 108, 0, 0.6)")
+
+          ctx.strokeStyle = gradient
+          ctx.lineWidth = 2
+          ctx.beginPath()
+          ctx.moveTo(node.x, node.y)
+          ctx.lineTo(targetNode.x, targetNode.y)
+          ctx.stroke()
+
+          // Data flow particle
+          if (node.status === "processing" || targetNode.status === "processing") {
+            const particleGradient = ctx.createRadialGradient(flowX, flowY, 0, flowX, flowY, 8)
+            particleGradient.addColorStop(0, "rgba(255, 255, 255, 0.9)")
+            particleGradient.addColorStop(1, "rgba(255, 108, 0, 0)")
+
+            ctx.fillStyle = particleGradient
             ctx.beginPath()
-            ctx.arc(particleX, particleY, 3, 0, Math.PI * 2)
+            ctx.arc(flowX, flowY, 4, 0, Math.PI * 2)
             ctx.fill()
           }
         })
       })
 
-      // Draw agents
-      agents.forEach((agent) => {
-        const pulse = Math.sin(animationFrame * 3 + agent.id.length) * 0.3 + 0.7
+      // Draw nodes
+      nodes.forEach((node) => {
+        const pulse = Math.sin(time * 2 + node.id.length) * 0.2 + 0.8
+        const isSelected = selectedNode === node.id
 
-        // Glow effect
-        const gradient = ctx.createRadialGradient(agent.x, agent.y, 0, agent.x, agent.y, agent.size * 2)
+        // Node colors based on type and status
+        let nodeColor = "#FF6C00"
+        if (node.type === "worker") nodeColor = "#00BFFF"
+        if (node.type === "data") nodeColor = "#32CD32"
 
-        if (agent.type === "orchestrator") {
-          gradient.addColorStop(0, `rgba(255, 108, 0, ${pulse})`)
-          gradient.addColorStop(0.5, `rgba(255, 108, 0, ${pulse * 0.5})`)
-          gradient.addColorStop(1, "rgba(255, 108, 0, 0)")
-        } else if (agent.type === "worker") {
-          gradient.addColorStop(0, `rgba(255, 0, 255, ${pulse})`)
-          gradient.addColorStop(0.5, `rgba(255, 0, 255, ${pulse * 0.5})`)
-          gradient.addColorStop(1, "rgba(255, 0, 255, 0)")
-        } else {
-          gradient.addColorStop(0, `rgba(0, 255, 255, ${pulse})`)
-          gradient.addColorStop(0.5, `rgba(0, 255, 255, ${pulse * 0.5})`)
-          gradient.addColorStop(1, "rgba(0, 255, 255, 0)")
+        // Outer glow
+        const glowSize = isSelected ? 30 : 20
+        const glowGradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glowSize)
+        glowGradient.addColorStop(0, `${nodeColor}40`)
+        glowGradient.addColorStop(1, `${nodeColor}00`)
+
+        ctx.fillStyle = glowGradient
+        ctx.beginPath()
+        ctx.arc(node.x, node.y, glowSize, 0, Math.PI * 2)
+        ctx.fill()
+
+        // Main node
+        const nodeSize = isSelected ? 16 : 12
+        const mainGradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, nodeSize)
+        mainGradient.addColorStop(0, "#FFFFFF")
+        mainGradient.addColorStop(0.3, nodeColor)
+        mainGradient.addColorStop(1, `${nodeColor}80`)
+
+        ctx.fillStyle = mainGradient
+        ctx.beginPath()
+        ctx.arc(node.x, node.y, nodeSize * pulse, 0, Math.PI * 2)
+        ctx.fill()
+
+        // Status indicator
+        if (node.status === "processing") {
+          ctx.strokeStyle = nodeColor
+          ctx.lineWidth = 2
+          ctx.beginPath()
+          ctx.arc(node.x, node.y, nodeSize + 8, 0, Math.PI * 2)
+          ctx.stroke()
         }
 
-        ctx.fillStyle = gradient
+        // Load indicator
+        const loadAngle = (node.load / 100) * Math.PI * 2
+        ctx.strokeStyle = `${nodeColor}80`
+        ctx.lineWidth = 3
         ctx.beginPath()
-        ctx.arc(agent.x, agent.y, agent.size * 2, 0, Math.PI * 2)
-        ctx.fill()
-
-        // Core node
-        ctx.fillStyle = agent.type === "orchestrator" ? "#FF6C00" : agent.type === "worker" ? "#FF00FF" : "#00FFFF"
-        ctx.beginPath()
-        ctx.arc(agent.x, agent.y, agent.size * pulse, 0, Math.PI * 2)
-        ctx.fill()
+        ctx.arc(node.x, node.y, nodeSize + 4, -Math.PI / 2, -Math.PI / 2 + loadAngle)
+        ctx.stroke()
 
         // Label
-        ctx.fillStyle = "white"
-        ctx.font = "12px monospace"
+        ctx.fillStyle = "#FFFFFF"
+        ctx.font = "12px Inter, sans-serif"
         ctx.textAlign = "center"
-        ctx.fillText(agent.id.toUpperCase(), agent.x, agent.y + agent.size + 20)
+        ctx.fillText(node.id, node.x, node.y + nodeSize + 20)
+        ctx.fillText(`${node.load}%`, node.x, node.y + nodeSize + 35)
       })
 
-      requestAnimationFrame(animate)
+      animationRef.current = requestAnimationFrame(animate)
     }
 
     animate()
 
+    // Mouse interaction
+    const handleCanvasClick = (event: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect()
+      const x = event.clientX - rect.left
+      const y = event.clientY - rect.top
+
+      const clickedNode = nodes.find((node) => {
+        const distance = Math.hypot(x - node.x, y - node.y)
+        return distance < 20
+      })
+
+      setSelectedNode(clickedNode ? clickedNode.id : null)
+    }
+
+    canvas.addEventListener("click", handleCanvasClick)
+
     return () => {
       window.removeEventListener("resize", resizeCanvas)
+      canvas.removeEventListener("click", handleCanvasClick)
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+      }
     }
+  }, [nodes, selectedNode])
+
+  // Simulate node updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNodes((prevNodes) =>
+        prevNodes.map((node) => ({
+          ...node,
+          load: Math.max(0, Math.min(100, node.load + (Math.random() - 0.5) * 20)),
+          status:
+            Math.random() > 0.8
+              ? (["active", "idle", "processing"] as const)[Math.floor(Math.random() * 3)]
+              : node.status,
+        })),
+      )
+    }, 3000)
+
+    return () => clearInterval(interval)
   }, [])
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 1 }}
-      className="relative w-full h-96 bg-black/30 rounded-2xl overflow-hidden"
-    >
-      <canvas ref={canvasRef} className="w-full h-full" />
+    <div className="relative h-96 w-full">
+      <motion.canvas
+        ref={canvasRef}
+        className="w-full h-full bg-black/30 rounded-xl cursor-pointer"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1 }}
+      />
+
+      {/* Node details panel */}
+      {selectedNode && (
+        <motion.div
+          className="absolute top-4 right-4 bg-black/80 backdrop-blur-xl border border-white/20 rounded-xl p-4 min-w-48"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 20 }}
+        >
+          {(() => {
+            const node = nodes.find((n) => n.id === selectedNode)
+            if (!node) return null
+
+            return (
+              <div className="space-y-2">
+                <h4 className="font-bold text-white text-sm">{node.id}</h4>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-white/60">Type:</span>
+                    <span className="text-orange-500 capitalize">{node.type}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/60">Status:</span>
+                    <span
+                      className={`capitalize ${
+                        node.status === "active"
+                          ? "text-green-400"
+                          : node.status === "processing"
+                            ? "text-blue-400"
+                            : "text-yellow-400"
+                      }`}
+                    >
+                      {node.status}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/60">Load:</span>
+                    <span className="text-orange-500">{node.load}%</span>
+                  </div>
+                  <div className="text-white/60">Connections: {node.connections.length}</div>
+                </div>
+              </div>
+            )
+          })()}
+        </motion.div>
+      )}
 
       {/* Legend */}
-      <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm rounded-xl p-4 text-sm">
-        <div className="space-y-2">
+      <motion.div
+        className="absolute bottom-4 left-4 bg-black/80 backdrop-blur-xl border border-white/20 rounded-xl p-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <div className="space-y-2 text-xs">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-            <span>Orchestrator</span>
+            <span className="text-white/80">Orchestrator</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-pink-500 rounded-full"></div>
-            <span>Worker Agent</span>
+            <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+            <span className="text-white/80">Worker Agent</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-cyan-500 rounded-full"></div>
-            <span>Monitor</span>
+            <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+            <span className="text-white/80">Data Node</span>
           </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   )
 }

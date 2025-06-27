@@ -11,6 +11,9 @@ import { AnalyticsProvider } from "@/components/analytics-provider"
 import { ErrorBoundary } from "@/components/error-boundary"
 import { LoadingScreen } from "@/components/loading-screen"
 import { PerformanceMonitor } from "@/components/performance-monitor"
+import { CommandPalette } from "@/components/command-palette"
+import { ToastProvider } from "@/components/toast-provider"
+import { ThemeProvider } from "@/components/theme-provider"
 
 export default function Home() {
   const [currentSection, setCurrentSection] = useState<"hero" | "frameworks" | "config" | "dashboard">("hero")
@@ -18,22 +21,12 @@ export default function Home() {
   const [isTransitioning, setIsTransitioning] = useState(false)
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoaded(true), 1500)
+    const timer = setTimeout(() => setIsLoaded(true), 2500)
     return () => clearTimeout(timer)
   }, [])
 
   const handleSectionChange = async (section: "hero" | "frameworks" | "config" | "dashboard") => {
     setIsTransitioning(true)
-
-    // Analytics tracking
-    if (typeof window !== "undefined") {
-      window.gtag?.("event", "section_change", {
-        from_section: currentSection,
-        to_section: section,
-        timestamp: Date.now(),
-      })
-    }
-
     await new Promise((resolve) => setTimeout(resolve, 300))
     setCurrentSection(section)
     setIsTransitioning(false)
@@ -75,50 +68,60 @@ export default function Home() {
 
   return (
     <ErrorBoundary>
-      <AnalyticsProvider>
-        <PerformanceMonitor />
-        <div className="min-h-screen bg-black text-white overflow-hidden relative">
-          <Navigation
-            currentSection={currentSection}
-            onSectionChange={handleSectionChange}
-            isTransitioning={isTransitioning}
-          />
+      <ThemeProvider>
+        <AnalyticsProvider>
+          <ToastProvider>
+            <PerformanceMonitor />
+            <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-800 text-black dark:text-white overflow-hidden relative">
+              <Navigation
+                currentSection={currentSection}
+                onSectionChange={handleSectionChange}
+                isTransitioning={isTransitioning}
+              />
 
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentSection}
-              variants={sectionVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="min-h-screen"
-            >
-              {currentSection === "hero" && <HeroSection onNext={() => handleSectionChange("frameworks")} />}
-              {currentSection === "frameworks" && <FrameworkSelection onNext={() => handleSectionChange("config")} />}
-              {currentSection === "config" && <ConfigurationPanel onNext={() => handleSectionChange("dashboard")} />}
-              {currentSection === "dashboard" && <MissionControlDashboard />}
-            </motion.div>
-          </AnimatePresence>
+              <CommandPalette onSectionChange={handleSectionChange} />
 
-          {/* Transition overlay */}
-          <AnimatePresence>
-            {isTransitioning && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center"
-              >
+              <AnimatePresence mode="wait">
                 <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-                  className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </AnalyticsProvider>
+                  key={currentSection}
+                  variants={sectionVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="min-h-screen"
+                >
+                  {currentSection === "hero" && <HeroSection onNext={() => handleSectionChange("frameworks")} />}
+                  {currentSection === "frameworks" && (
+                    <FrameworkSelection onNext={() => handleSectionChange("config")} />
+                  )}
+                  {currentSection === "config" && (
+                    <ConfigurationPanel onNext={() => handleSectionChange("dashboard")} />
+                  )}
+                  {currentSection === "dashboard" && <MissionControlDashboard />}
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Transition overlay */}
+              <AnimatePresence>
+                {isTransitioning && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-white/50 dark:bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center"
+                  >
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                      className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full"
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </ToastProvider>
+        </AnalyticsProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   )
 }
