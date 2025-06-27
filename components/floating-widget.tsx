@@ -1,12 +1,10 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { useState, useEffect } from "react"
 
 interface FloatingWidgetProps {
   label: string
-  metric: string
-  color: "green" | "orange" | "blue" | "purple"
+  color: "green" | "orange" | "blue" | "magenta"
   position: {
     top?: string
     bottom?: string
@@ -14,86 +12,46 @@ interface FloatingWidgetProps {
     right?: string
   }
   delay?: number
+  metric: string
 }
 
-export function FloatingWidget({ label, metric, color, position, delay = 0 }: FloatingWidgetProps) {
-  const [isVisible, setIsVisible] = useState(false)
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(true)
-    }, delay * 1000)
-
-    return () => clearTimeout(timer)
-  }, [delay])
-
+export function FloatingWidget({ label, color, position, delay = 0, metric }: FloatingWidgetProps) {
   const colorClasses = {
-    green: "from-green-500/20 to-green-600/20 border-green-500/30 text-green-400",
-    orange: "from-orange-500/20 to-orange-600/20 border-orange-500/30 text-orange-400",
-    blue: "from-blue-500/20 to-blue-600/20 border-blue-500/30 text-blue-400",
-    purple: "from-purple-500/20 to-purple-600/20 border-purple-500/30 text-purple-400",
+    green: "bg-green-500/20 border-green-500/30 text-green-600",
+    orange: "bg-orange-500/20 border-orange-500/30 text-orange-600",
+    blue: "bg-blue-500/20 border-blue-500/30 text-blue-600",
+    magenta: "bg-pink-500/20 border-pink-500/30 text-pink-600",
   }
-
-  const glowColors = {
-    green: "0 0 30px rgba(16, 185, 129, 0.3)",
-    orange: "0 0 30px rgba(255, 102, 0, 0.3)",
-    blue: "0 0 30px rgba(59, 130, 246, 0.3)",
-    purple: "0 0 30px rgba(147, 51, 234, 0.3)",
-  }
-
-  if (!isVisible) return null
 
   return (
     <motion.div
-      className={`fixed z-20 hidden lg:block`}
+      className={`absolute z-20 px-4 py-2 rounded-full backdrop-blur-xl border ${colorClasses[color]} shadow-lg`}
       style={position}
       initial={{ opacity: 0, scale: 0.8, y: 20 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
+      animate={{
+        opacity: 1,
+        scale: 1,
+        y: [0, -10, 0],
+      }}
+      transition={{
+        opacity: { delay, duration: 0.5 },
+        scale: { delay, duration: 0.5 },
+        y: {
+          delay: delay + 0.5,
+          duration: 3,
+          repeat: Number.POSITIVE_INFINITY,
+          ease: "easeInOut",
+        },
+      }}
+      whileHover={{ scale: 1.1 }}
     >
-      <motion.div
-        className={`
-          bg-gradient-to-br ${colorClasses[color]} backdrop-blur-xl 
-          border rounded-2xl px-6 py-4 shadow-xl
-        `}
-        animate={{
-          y: [0, -10, 0],
-          boxShadow: [glowColors[color], `${glowColors[color]}, ${glowColors[color]}`, glowColors[color]],
-        }}
-        transition={{
-          y: { duration: 4, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" },
-          boxShadow: { duration: 3, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" },
-        }}
-        whileHover={{ scale: 1.05, y: -5 }}
-      >
-        <div className="text-center">
-          <div className="text-sm font-medium text-gray-300 mb-1">{label}</div>
-          <motion.div
-            className={`text-2xl font-bold ${colorClasses[color].split(" ").pop()}`}
-            key={metric}
-            initial={{ scale: 1.2 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            {metric}
-          </motion.div>
-        </div>
-
-        {/* Pulse indicator */}
-        <motion.div
-          className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${
-            color === "green"
-              ? "bg-green-500"
-              : color === "orange"
-                ? "bg-orange-500"
-                : color === "blue"
-                  ? "bg-blue-500"
-                  : "bg-purple-500"
-          }`}
-          animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
-          transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+      <div className="flex items-center space-x-2 text-sm font-medium">
+        <div
+          className={`w-2 h-2 rounded-full ${color === "green" ? "bg-green-500" : color === "orange" ? "bg-orange-500" : color === "blue" ? "bg-blue-500" : "bg-pink-500"} animate-pulse`}
         />
-      </motion.div>
+        <span>{label}</span>
+        <span className="font-mono font-bold">{metric}</span>
+      </div>
     </motion.div>
   )
 }

@@ -1,44 +1,71 @@
 "use client"
 
-import { useEffect } from "react"
-import { getSafeTopWindow } from "@/lib/safe-window"
+import { useEffect, useRef } from "react"
+import { useAnalytics } from "./analytics-provider"
 
-/**
- * Lightweight RUM / performance monitor.
- * - Collects First Contentful Paint & Largest Contentful Paint.
- * - Logs the metric via console OR sends it to the global analytics context.
- *   (No cross-origin frame access.)
- */
 export function PerformanceMonitor() {
+  const { trackPerformance } = useAnalytics()
+  const metricsRef = useRef({
+    startTime: Date.now(),
+    lastFrameTime: Date.now(),
+    frameCount: 0,
+  })
+
   useEffect(() => {
-    // Always use the safe window reference.
-    const win = getSafeTopWindow()
+    let animationFrameId: number
+    let performanceInterval: NodeJS.Timeout
 
-    // Don't run in unsupported browsers.
-    if (!("PerformanceObserver" in win)) return
+    const measureFPS = () => {
+      const now = Date.now()
+      const delta = now - metricsRef.current.lastFrameTime
+      metricsRef.current.lastFrameTime = now
+      metricsRef.current.frameCount++
 
-    const handleEntry = (list: PerformanceObserverEntryList) => {
-      for (const entry of list.getEntries()) {
-        if (entry.entryType === "paint") {
-          console.log("[Perf]", entry.name, entry.startTime.toFixed(2))
+      if (delta > 0) {
+        const fps = 1000 / delta
+        if (metricsRef.current.frameCount % 60 === 0) {
+          trackPerformance("fps", Math.round(fps))
         }
-        if (entry.entryType === "largest-contentful-paint") {
-          console.log("[Perf] LCP", entry.startTime.toFixed(2))
+      }
+
+      animationFrameId = requestAnimationFrame(measureFPS)
+    }
+
+    const measurePerformance = () => {
+      if (typeof window !== "undefined" && "performance" in window) {
+        const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming
+        if (navigation) {
+          trackPerformance("page_load_time", navigation.loadEventEnd - navigation.fetchStart)
+          trackPerformance("dom_content_loaded", navigation.domContentLoadedEventEnd - navigation.fetchStart)
+        }
+
+        // Memory usage (if available)
+        if ("memory" in performance) {
+          const memory = (performance as any).memory
+          trackPerformance("memory_used", memory.usedJSHeapSize)
+          trackPerformance("memory_total", memory.totalJSHeapSize)
         }
       }
     }
 
-    const observer = new PerformanceObserver(handleEntry)
-    try {
-      observer.observe({ type: "paint", buffered: true })
-      observer.observe({ type: "largest-contentful-paint", buffered: true })
-    } catch {
-      /* silently ignore unsupported entry types */
-    }
+    // Start FPS monitoring
+    animationFrameId = requestAnimationFrame(measureFPS)
 
-    // Clean-up
-    return () => observer.disconnect()
-  }, [])
+    // Measure performance metrics periodically
+    performanceInterval = setInterval(measurePerformance, 10000) // Every 10 seconds
+
+    // Initial performance measurement
+    setTimeout(measurePerformance, 1000)
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+      }
+      if (performanceInterval) {
+        clearInterval(performanceInterval)
+      }
+    }
+  }, [trackPerformance])
 
   return null
 }

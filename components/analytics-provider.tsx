@@ -1,6 +1,7 @@
 "use client"
 
-import { createContext, useContext, useCallback, useMemo, type ReactNode } from "react"
+import type React from "react"
+import { createContext, useContext, useCallback, useMemo } from "react"
 
 interface AnalyticsContextType {
   trackEvent: (eventName: string, properties?: Record<string, any>) => void
@@ -10,7 +11,7 @@ interface AnalyticsContextType {
 
 const AnalyticsContext = createContext<AnalyticsContextType | null>(null)
 
-export function AnalyticsProvider({ children }: { children: ReactNode }) {
+export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   const trackEvent = useCallback((eventName: string, properties?: Record<string, any>) => {
     if (typeof window !== "undefined") {
       console.log("Analytics Event:", eventName, properties)

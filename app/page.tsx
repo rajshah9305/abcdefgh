@@ -11,9 +11,6 @@ import { AnalyticsProvider } from "@/components/analytics-provider"
 import { ErrorBoundary } from "@/components/error-boundary"
 import { LoadingScreen } from "@/components/loading-screen"
 import { PerformanceMonitor } from "@/components/performance-monitor"
-import { CommandPalette } from "@/components/command-palette"
-import { ToastProvider } from "@/components/toast-provider"
-import { ThemeProvider } from "@/components/theme-provider"
 
 export default function Home() {
   const [currentSection, setCurrentSection] = useState<"hero" | "frameworks" | "config" | "dashboard">("hero")
@@ -68,60 +65,50 @@ export default function Home() {
 
   return (
     <ErrorBoundary>
-      <ThemeProvider>
-        <AnalyticsProvider>
-          <ToastProvider>
-            <PerformanceMonitor />
-            <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-800 text-black dark:text-white overflow-hidden relative">
-              <Navigation
-                currentSection={currentSection}
-                onSectionChange={handleSectionChange}
-                isTransitioning={isTransitioning}
-              />
+      <AnalyticsProvider>
+        <PerformanceMonitor />
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 text-black overflow-hidden relative">
+          <Navigation
+            currentSection={currentSection}
+            onSectionChange={handleSectionChange}
+            isTransitioning={isTransitioning}
+          />
 
-              <CommandPalette onSectionChange={handleSectionChange} />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentSection}
+              variants={sectionVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="min-h-screen"
+            >
+              {currentSection === "hero" && <HeroSection onNext={() => handleSectionChange("frameworks")} />}
+              {currentSection === "frameworks" && <FrameworkSelection onNext={() => handleSectionChange("config")} />}
+              {currentSection === "config" && <ConfigurationPanel onNext={() => handleSectionChange("dashboard")} />}
+              {currentSection === "dashboard" && <MissionControlDashboard />}
+            </motion.div>
+          </AnimatePresence>
 
-              <AnimatePresence mode="wait">
+          {/* Transition overlay */}
+          <AnimatePresence>
+            {isTransitioning && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-white/50 backdrop-blur-sm z-40 flex items-center justify-center"
+              >
                 <motion.div
-                  key={currentSection}
-                  variants={sectionVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  className="min-h-screen"
-                >
-                  {currentSection === "hero" && <HeroSection onNext={() => handleSectionChange("frameworks")} />}
-                  {currentSection === "frameworks" && (
-                    <FrameworkSelection onNext={() => handleSectionChange("config")} />
-                  )}
-                  {currentSection === "config" && (
-                    <ConfigurationPanel onNext={() => handleSectionChange("dashboard")} />
-                  )}
-                  {currentSection === "dashboard" && <MissionControlDashboard />}
-                </motion.div>
-              </AnimatePresence>
-
-              {/* Transition overlay */}
-              <AnimatePresence>
-                {isTransitioning && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 bg-white/50 dark:bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center"
-                  >
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-                      className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full"
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </ToastProvider>
-        </AnalyticsProvider>
-      </ThemeProvider>
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                  className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </AnalyticsProvider>
     </ErrorBoundary>
   )
 }

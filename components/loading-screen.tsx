@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
-import { Brain, Network, Zap, Activity, Sparkles, Cpu, Shield } from "lucide-react"
+import { Brain, Network, Zap, Activity } from "lucide-react"
 
 export function LoadingScreen() {
   const [progress, setProgress] = useState(0)
@@ -10,45 +10,28 @@ export function LoadingScreen() {
   const [currentStep, setCurrentStep] = useState(0)
 
   const loadingSteps = [
-    { text: "Initializing AI Orchestra...", icon: Brain, duration: 2000 },
-    { text: "Loading Neural Networks...", icon: Network, duration: 2500 },
-    { text: "Connecting Agent Nodes...", icon: Zap, duration: 2000 },
-    { text: "Optimizing Performance...", icon: Activity, duration: 1800 },
-    { text: "Calibrating Security...", icon: Shield, duration: 1500 },
-    { text: "Finalizing Systems...", icon: Cpu, duration: 1200 },
-    { text: "Ready to Orchestrate!", icon: Sparkles, duration: 1000 },
+    { text: "Initializing AI Orchestra...", icon: Brain },
+    { text: "Loading Neural Networks...", icon: Network },
+    { text: "Connecting Agent Nodes...", icon: Zap },
+    { text: "Optimizing Performance...", icon: Activity },
+    { text: "Ready to Orchestrate!", icon: Brain },
   ]
 
   useEffect(() => {
-    const totalDuration = 0
-    const stepDurations = loadingSteps.map((step) => step.duration)
-    const totalTime = stepDurations.reduce((sum, duration) => sum + duration, 0)
-
     const interval = setInterval(() => {
       setProgress((prev) => {
-        const increment = (100 / totalTime) * 50 // Smooth increment
-        const newProgress = Math.min(prev + increment, 100)
+        const newProgress = Math.min(prev + Math.random() * 12 + 3, 100)
+        const stepIndex = Math.floor((newProgress / 100) * loadingSteps.length)
+        const safeStepIndex = Math.min(stepIndex, loadingSteps.length - 1)
 
-        // Calculate which step we should be on based on progress
-        let accumulatedTime = 0
-        let stepIndex = 0
-
-        for (let i = 0; i < stepDurations.length; i++) {
-          accumulatedTime += stepDurations[i]
-          if ((newProgress / 100) * totalTime <= accumulatedTime) {
-            stepIndex = i
-            break
-          }
-        }
-
-        if (stepIndex !== currentStep && stepIndex < loadingSteps.length) {
-          setCurrentStep(stepIndex)
-          setLoadingText(loadingSteps[stepIndex].text)
+        if (safeStepIndex !== currentStep) {
+          setCurrentStep(safeStepIndex)
+          setLoadingText(loadingSteps[safeStepIndex].text)
         }
 
         return newProgress
       })
-    }, 50)
+    }, 150)
 
     return () => clearInterval(interval)
   }, [currentStep])
@@ -59,198 +42,123 @@ export function LoadingScreen() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0, scale: 1.05, filter: "blur(10px)" }}
-      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed inset-0 bg-black flex items-center justify-center z-50 overflow-hidden"
+      exit={{ opacity: 0, scale: 1.1 }}
+      transition={{ duration: 0.5 }}
+      className="fixed inset-0 bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center z-50"
     >
-      {/* Animated background particles */}
-      <div className="absolute inset-0">
-        {[...Array(30)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-orange-500/30 rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [0, -100, 0],
-              opacity: [0, 0.8, 0],
-              scale: [0, 1.5, 0],
-            }}
-            transition={{
-              duration: Math.random() * 4 + 3,
-              repeat: Number.POSITIVE_INFINITY,
-              delay: Math.random() * 3,
-              ease: "easeInOut",
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="text-center max-w-lg mx-auto px-8 relative z-10">
-        {/* Enhanced Animated Logo */}
+      <div className="text-center max-w-md mx-auto px-6">
+        {/* Animated Logo */}
         <motion.div
-          className="relative w-40 h-40 mx-auto mb-12"
+          className="relative w-24 h-24 mx-auto mb-8"
           animate={{
             rotate: [0, 360],
+            scale: [1, 1.1, 1],
           }}
           transition={{
-            rotate: { duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "linear" },
+            rotate: { duration: 3, repeat: Number.POSITIVE_INFINITY, ease: "linear" },
+            scale: { duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" },
           }}
         >
-          {/* Outer rotating rings */}
-          {[...Array(3)].map((_, i) => (
-            <motion.div
-              key={i}
-              className={`absolute inset-${i * 3} border-2 rounded-full opacity-${60 - i * 15}`}
-              style={{
-                borderColor: `rgba(255, 102, 0, ${0.6 - i * 0.2})`,
-              }}
-              animate={{ rotate: i % 2 === 0 ? 360 : -360 }}
-              transition={{
-                duration: 6 + i * 2,
-                repeat: Number.POSITIVE_INFINITY,
-                ease: "linear",
-              }}
-            />
-          ))}
-
-          {/* Central icon container */}
+          {/* Outer ring */}
           <motion.div
-            className="absolute inset-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center shadow-2xl"
-            animate={{
-              scale: [1, 1.1, 1],
-              boxShadow: [
-                "0 0 30px rgba(255, 102, 0, 0.4)",
-                "0 0 60px rgba(255, 102, 0, 0.8)",
-                "0 0 30px rgba(255, 102, 0, 0.4)",
-              ],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: "easeInOut",
-            }}
-          >
+            className="absolute inset-0 border-4 border-orange-200 rounded-full"
+            animate={{ rotate: -360 }}
+            transition={{ duration: 4, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+          />
+
+          {/* Inner circle */}
+          <div className="absolute inset-2 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center shadow-lg">
             <motion.div
               key={currentStep}
-              initial={{ scale: 0, rotate: -180, opacity: 0 }}
-              animate={{ scale: 1, rotate: 0, opacity: 1 }}
-              exit={{ scale: 0, rotate: 180, opacity: 0 }}
-              transition={{ duration: 0.8, ease: "backOut" }}
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ duration: 0.5, ease: "backOut" }}
             >
-              <IconComponent size={48} className="text-white drop-shadow-lg" />
+              <IconComponent size={32} className="text-white" />
             </motion.div>
-          </motion.div>
+          </div>
 
-          {/* Orbital particles */}
-          {[...Array(8)].map((_, i) => (
+          {/* Floating particles */}
+          {[...Array(6)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-3 h-3 bg-orange-400 rounded-full"
+              className="absolute w-2 h-2 bg-orange-400 rounded-full"
               style={{
-                left: `${50 + 50 * Math.cos((i * Math.PI * 2) / 8)}%`,
-                top: `${50 + 50 * Math.sin((i * Math.PI * 2) / 8)}%`,
+                left: `${50 + 40 * Math.cos((i * Math.PI * 2) / 6)}%`,
+                top: `${50 + 40 * Math.sin((i * Math.PI * 2) / 6)}%`,
               }}
               animate={{
-                scale: [0.5, 1.5, 0.5],
+                scale: [0.5, 1, 0.5],
                 opacity: [0.3, 1, 0.3],
-                rotate: [0, 360],
               }}
               transition={{
-                duration: 3,
+                duration: 2,
                 repeat: Number.POSITIVE_INFINITY,
-                delay: i * 0.3,
+                delay: i * 0.2,
                 ease: "easeInOut",
               }}
             />
           ))}
         </motion.div>
 
-        {/* Enhanced Loading Text */}
-        <motion.div className="space-y-6 mb-12">
-          <motion.h2
-            key={loadingText}
-            initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="text-4xl font-bold text-white mb-4"
-          >
-            {loadingText}
-          </motion.h2>
+        {/* Loading Text */}
+        <motion.h2
+          key={loadingText}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-2xl font-bold text-gray-800 mb-2"
+        >
+          {loadingText}
+        </motion.h2>
 
-          <motion.p
-            className="text-white/70 text-xl"
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY }}
-          >
-            Preparing your AI orchestration experience
-          </motion.p>
-        </motion.div>
+        <motion.p
+          className="text-gray-600 mb-8"
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+        >
+          Preparing your AI orchestration experience
+        </motion.p>
 
-        {/* Enhanced Progress Bar */}
-        <div className="w-full h-6 bg-white/10 rounded-full overflow-hidden mb-8 backdrop-blur-sm border border-white/20">
+        {/* Progress Bar */}
+        <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden mb-4 shadow-inner">
           <motion.div
             className="h-full bg-gradient-to-r from-orange-500 to-orange-600 rounded-full relative"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
           >
-            {/* Enhanced shimmer effect */}
+            {/* Shimmer effect */}
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent"
-              animate={{ x: ["-100%", "200%"] }}
-              transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-            />
-
-            {/* Glow effect */}
-            <motion.div
-              className="absolute inset-0 bg-white/30 rounded-full blur-sm"
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+              animate={{ x: ["-100%", "100%"] }}
+              transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
             />
           </motion.div>
         </div>
 
-        {/* Progress Details */}
+        {/* Progress Percentage */}
         <motion.div
-          className="flex justify-between items-center text-lg text-white/80 mb-8"
+          className="flex justify-between items-center text-sm text-gray-500"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          <span>Loading systems...</span>
-          <motion.span
-            className="font-mono font-bold text-white text-2xl"
-            animate={{
-              color: ["#ffffff", "#ff6600", "#ffffff"],
-              textShadow: [
-                "0 0 0px rgba(255, 102, 0, 0)",
-                "0 0 20px rgba(255, 102, 0, 0.8)",
-                "0 0 0px rgba(255, 102, 0, 0)",
-              ],
-            }}
-            transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-          >
-            {Math.round(progress)}%
-          </motion.span>
+          <span>Loading...</span>
+          <span className="font-mono font-semibold text-orange-600">{Math.round(progress)}%</span>
         </motion.div>
 
         {/* Step indicators */}
-        <div className="flex justify-center space-x-4">
-          {loadingSteps.map((step, index) => (
+        <div className="flex justify-center space-x-2 mt-6">
+          {loadingSteps.map((_, index) => (
             <motion.div
               key={index}
-              className={`w-4 h-4 rounded-full border-2 ${
-                index <= currentStep ? "bg-orange-500 border-orange-500" : "bg-transparent border-white/30"
-              }`}
+              className={`w-2 h-2 rounded-full ${index <= currentStep ? "bg-orange-500" : "bg-gray-300"}`}
               animate={{
-                scale: index === currentStep ? [1, 1.5, 1] : 1,
-                borderColor: index === currentStep ? ["#ff6600", "#ffffff", "#ff6600"] : undefined,
+                scale: index === currentStep ? [1, 1.3, 1] : 1,
               }}
               transition={{
-                duration: 0.8,
+                duration: 0.5,
                 repeat: index === currentStep ? Number.POSITIVE_INFINITY : 0,
               }}
             />
